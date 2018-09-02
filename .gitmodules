@@ -1,0 +1,3 @@
+[submodule "rust/spec"]
+	path = rust/spec
+	url = git@github.com:regiontog/spec.git
