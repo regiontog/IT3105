@@ -1,7 +1,7 @@
 init:
-    pip install -r requirements.txt
+	pip3 install --user tox
 
 test:
-    py.test tests
+	python -m tox
 
 .PHONY: init test

@@ -1,0 +1,10 @@
+*.log
+*.pyc
+.cache/
+.pytest_cache
+.tox
+it3105.egg-info/
+build/
+dist/
+docs/build/
+wheelhouse/
