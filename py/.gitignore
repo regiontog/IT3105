@@ -1,6 +1,7 @@
 *.log
 *.pyc
 .cache/
+.venv
 .pytest_cache
 .tox
 it3105.egg-info/

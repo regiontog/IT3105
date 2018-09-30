@@ -1,12 +1,6 @@
 __version__ = '0.0.1'
-
-import logzero
-import tensorflow as tf
-
-
-def main():
-    print("Hello")
+from .command_line import run
 
 
 if __name__ == "__main__":
-    main()
+    run()
