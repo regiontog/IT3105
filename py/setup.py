@@ -13,6 +13,7 @@ setup(
         'logzero',
         'tensorflow==1.11.0',
         'cerberus==1.2',
-        'toml==0.9.6 '
+        'toml==0.9.6 ',
+        'docopt==0.6.2',
     ],
 )
