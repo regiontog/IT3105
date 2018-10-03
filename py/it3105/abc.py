@@ -2,11 +2,17 @@ from abc import ABC, abstractmethod
 from typing import Optional, Generator, Any
 
 from itertools import islice, cycle
-from random import sample
+from random import sample, shuffle
 
 
 def split(list, at):
     return (list[:at], list[at:])
+
+
+def cycle_reshuffle(list):
+    while True:
+        yield from list
+        shuffle(list)
 
 
 class Dataset(ABC):
@@ -27,7 +33,7 @@ class Dataset(ABC):
         tests, training = split(training, int(cases * testf))
 
         return (
-            (self.nth_case(n) for n in cycle(training)),
-            [self.nth_case(n) for n in validations],
-            [self.nth_case(n) for n in tests]
+            (self.nth_case(n) for n in cycle_reshuffle(training)),
+            (self.nth_case(n) for n in validations),
+            (self.nth_case(n) for n in tests)
         )

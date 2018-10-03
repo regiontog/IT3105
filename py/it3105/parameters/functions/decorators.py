@@ -1,6 +1,8 @@
 import functools
 import typing
 
+from ..cerberus import string, decimal, boolean
+
 
 def param_schema(schema):
     def decorator(fn):
@@ -14,16 +16,18 @@ def param_schema(schema):
     return decorator
 
 
-to_schema = {
-    str: {
-        'type': 'string',
-        'required': True,
-    },
-    float: {
-        'type': 'float',
-        'required': True,
-    }
+types = {
+    str: string(),
+    float: decimal(),
+    bool: boolean()
 }
+
+
+def to_schema(cls):
+    if isinstance(cls, dict):
+        return cls
+    else:
+        return types[cls]
 
 
 def infer_schema(fn):
@@ -31,6 +35,6 @@ def infer_schema(fn):
     schema = {
         'type': 'dict',
         'required': True,
-        'schema': {field_name: to_schema[cls] for field_name, cls in hints.items()},
+        'schema': {field_name: to_schema(cls) for field_name, cls in hints.items()},
     }
     return param_schema(schema)(fn)

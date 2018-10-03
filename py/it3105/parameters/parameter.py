@@ -4,8 +4,8 @@ from enum import auto, Enum
 class Parameter(Enum):
     MAP = auto()
     NUM = auto()
-    SIZE = auto()
     COST = auto()
+    SIZE = auto()
     DATA = auto()
     TEST = auto()
     LOWER = auto()
@@ -26,6 +26,7 @@ class Parameter(Enum):
     ACTIVATION = auto()
     PARAMETERS = auto()
     VALIDATION = auto()
+    LEARNING_RATE = auto()
     VISUALIZATION = auto()
     CASE_FRACTION = auto()
     INITIAL_WEIGHTS = auto()

@@ -25,6 +25,11 @@ class NetworkParameters(Parameters):
                 results[key] = NetworkParameters.transform(
                     results[key], transform)
             else:
+                transform, nested = transform
+                if len(nested) > 0:
+                    results[key] = NetworkParameters.transform(
+                        results[key], nested)
+
                 results[key] = transform(results[key])
 
         return results

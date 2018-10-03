@@ -15,5 +15,7 @@ setup(
         'cerberus==1.2',
         'toml==0.9.6 ',
         'docopt==0.6.2',
+        'PyQt5==5.11.2',
+        'pyqtgraph==0.10.0',
     ],
 )
