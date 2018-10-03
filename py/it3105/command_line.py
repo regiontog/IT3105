@@ -143,9 +143,8 @@ def in_thread(cw):
     with tf.Session() as session:
         session.run(tf.global_variables_initializer())
 
+        # Training
         for epoch, (xs, ys) in zip(range(mb_steps), minibatches):
-
-            # Training
             testr, lr, lossr, _, _ = session.run([test, learning_rate, loss, train, inc_global_step], {
                 **train_feed,
                 minibatch_input: xs,
@@ -156,8 +155,8 @@ def in_thread(cw):
             plot_lr(epoch, lr)
             plot_tt(epoch, testr)
 
+            # Validation
             if epoch % vint == 0:
-                # Validation
                 xs, ys = validation
                 testr, validation_loss = session.run([test, loss], {
                     **test_feed,
@@ -187,7 +186,6 @@ def in_thread(cw):
 
         import code
         code.InteractiveConsole(locals=dict(y=y)).interact()
-        print("done")
 
 
 def ensure(this, err_msg, warning=False):
