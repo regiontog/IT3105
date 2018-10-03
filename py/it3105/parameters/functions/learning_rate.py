@@ -1,20 +1,21 @@
 from .decorators import infer_schema
 
 import tensorflow as tf
+import math
 
 
 @infer_schema
 def exponential_decay(
         initial_rate: float,
         decay_steps: float,
-        decay_rate: float,
+        to: float,
         staircase: bool):
 
-    return lambda gs: tf.train.exponential_decay(
+    return lambda gs: to + tf.train.exponential_decay(
         initial_rate,
         gs,
         decay_steps,
-        decay_rate,
+        1/math.e,
         staircase=staircase,
         name="learning_rate"
     )

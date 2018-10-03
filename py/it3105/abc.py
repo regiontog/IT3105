@@ -26,11 +26,12 @@ class Dataset(ABC):
         pass
 
     def split(self, casef, valf, testf):
-        cases = int(self.size * casef)
+        shuffled_cases = sample(range(self.size), self.size)
+        cases_len = int(self.size * casef)
 
-        training = sample(range(cases), cases)
-        validations, training = split(training, int(cases * valf))
-        tests, training = split(training, int(cases * testf))
+        training = shuffled_cases[:cases_len]
+        validations, training = split(training, int(cases_len * valf))
+        tests, training = split(training, int(cases_len * testf))
 
         return (
             (self.nth_case(n) for n in cycle_reshuffle(training)),

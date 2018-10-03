@@ -1,36 +1,35 @@
 from .parameter import Parameter
-from .functions.activation import ACTIVATIONS
 from .functions.optimize import OPTIMIZERS
 from .functions.data import SOURCE_GENERATORS
 from .functions.learning_rate import ADAPTIVE_RATES
-from .functions.cost import COSTS
+from .functions.cost import COSTS, ACCURACY_TESTS
+from .functions.ann import LAYER_TYPES
+from .functions.weight_initialization import INITS
 
 from .cerberus import *
 
 
+def to_layer_schema(item):
+    name, fn = item
+    schema = {}
+
+    if fn._parameters_schema:
+        schema = fn._parameters_schema
+
+    return record({
+        **schema,
+        Parameter.KIND: string(allowed=[name]),
+    })
+
+
 SCHEMA = Parameter.normalize({
-    Parameter.DIMENSIONS: record({
-        Parameter.LAYERS: record({
-            Parameter.NUM: integer(),
-            Parameter.SIZE: integer()
-        }),
-        Parameter.INPUT: record({
-            Parameter.SIZE: integer()
-        }),
-        Parameter.OUTPUT: record({
-            Parameter.SIZE: integer()
-        }),
-    }),
-    Parameter.ACTIVATION: record({
-        Parameter.LAYERS: function(ACTIVATIONS),
-        Parameter.OUTPUT: function(ACTIVATIONS)
-    }),
+    Parameter.LAYERS: array(one_of(map(to_layer_schema, LAYER_TYPES.items()))),
     Parameter.COST: function(COSTS),
-    Parameter.OPTIMIZER: function(OPTIMIZERS),
-    Parameter.INITIAL_WEIGHTS: record({
-        Parameter.LOWER: decimal(),
-        Parameter.UPPER: decimal(),
+    Parameter.INITIAL_WEIGHTS: function(INITS),
+    Parameter.INPUT: record({
+        Parameter.SIZE: integer()
     }),
+    Parameter.OPTIMIZER: function(OPTIMIZERS),
     Parameter.DATA: record({
         Parameter.CASE_FRACTION: decimal(),
         Parameter.SOURCE: function(SOURCE_GENERATORS),
@@ -39,9 +38,11 @@ SCHEMA = Parameter.normalize({
         Parameter.FRACTION: decimal(),
         Parameter.INTERVAL: integer(),
     }),
+    Parameter.ACCURACY: function(ACCURACY_TESTS),
     Parameter.TEST: record({
         Parameter.FRACTION: decimal(),
     }),
+    Parameter.RANDOM_SEED: decimal(),
     Parameter.MINIBATCH: record({
         Parameter.SIZE: integer(),
         Parameter.STEPS: integer(),
@@ -77,10 +78,7 @@ def fn_transform(functions):
 
 
 TRANSFORMATIONS = Parameter.normalize({
-    Parameter.ACTIVATION: Parameter.normalize({
-        Parameter.LAYERS: (fn_transform(ACTIVATIONS), {}),
-        Parameter.OUTPUT: (fn_transform(ACTIVATIONS), {})
-    }),
+    Parameter.INITIAL_WEIGHTS: (fn_transform(INITS), {}),
     Parameter.COST: (fn_transform(COSTS), {}),
     Parameter.OPTIMIZER: (fn_transform(OPTIMIZERS), Parameter.normalize({
         Parameter.PARAMETERS: Parameter.normalize({
@@ -90,4 +88,5 @@ TRANSFORMATIONS = Parameter.normalize({
     Parameter.DATA: Parameter.normalize({
         Parameter.SOURCE: (fn_transform(SOURCE_GENERATORS), {}),
     }),
+    Parameter.ACCURACY: (fn_transform(ACCURACY_TESTS), {}),
 })
