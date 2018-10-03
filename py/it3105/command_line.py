@@ -144,6 +144,7 @@ def in_thread(cw):
         session.run(tf.global_variables_initializer())
 
         for epoch, (xs, ys) in zip(range(mb_steps), minibatches):
+
             # Training
             testr, lr, lossr, _, _ = session.run([test, learning_rate, loss, train, inc_global_step], {
                 **train_feed,
@@ -186,6 +187,7 @@ def in_thread(cw):
 
         import code
         code.InteractiveConsole(locals=dict(y=y)).interact()
+        print("done")
 
 
 def ensure(this, err_msg, warning=False):

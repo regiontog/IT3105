@@ -24,17 +24,28 @@ class Signal(QObject):
 
 
 class Runner(QThread):
+    signal = pyqtSignal()
+
     def __init__(self, target):
         super().__init__()
 
         self.target = target
 
     def run(self):
-        self.target()
+        try:
+            self.target()
+        except:
+            import traceback
+            print(traceback.format_exc())
+
+        self.signal.emit()
 
 
 def start_ui_and_run(runner):
     import sys
+    import signal
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = QApplication([])
     w = QMainWindow()
@@ -53,7 +64,12 @@ def start_ui_and_run(runner):
         except StopIteration:
             pass
 
+    def quit():
+        sys.exit(app.exit())
+
     r = Runner(run_next)
+
+    r.signal.connect(quit)
     r.start()
 
     sys.exit(app.exec_())
