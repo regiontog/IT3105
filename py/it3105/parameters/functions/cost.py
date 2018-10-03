@@ -1,4 +1,4 @@
-from .decorators import param_schema
+from .decorators import param_schema, infer_schema
 
 import tensorflow as tf
 
@@ -41,6 +41,15 @@ def argmax():
     return am
 
 
+@param_schema(None)
+def rounded_equal():
+    def am(y, y_):
+        return tf.reduce_mean(tf.cast(tf.equal(y, tf.round(y_)), tf.float32))
+
+    return am
+
+
 ACCURACY_TESTS = [
-    argmax
+    argmax,
+    rounded_equal,
 ]
