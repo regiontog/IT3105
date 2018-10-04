@@ -10,6 +10,13 @@ def record(schema, **kwargs):
     }
 
 
+def optional(schema):
+    return {
+        **schema,
+        'required': False,
+    }
+
+
 def integer(**kwargs):
     return {
         **kwargs,

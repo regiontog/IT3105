@@ -17,5 +17,7 @@ setup(
         'docopt==0.6.2',
         'PyQt5==5.11.2',
         'pyqtgraph==0.10.0',
+        'scipy==1.1.0',
+        'matplotlib==3.0.0'
     ],
 )

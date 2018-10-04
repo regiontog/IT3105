@@ -14,6 +14,8 @@ Options:
 from itertools import zip_longest, islice, chain
 import numpy as np
 
+import pyqtgraph as pg
+
 from .parameters import NetworkParameters, Parameter as P
 from .visualization import start_ui_and_run, Signal
 
@@ -43,6 +45,13 @@ def curve_plot_signal(plot, name=None, pen='w'):
         curve.setData(ys, data)
 
     return plotter
+
+
+def draw_rect(vbox, x, y, width, height, pen=pg.mkBrush('r')):
+    r = pg.QtGui.QGraphicsRectItem(x, y, width, height)
+    r.setPen(pg.mkPen(None))
+    r.setBrush(pen)
+    vbox.addItem(r)
 
 
 def in_thread(cw):
@@ -91,6 +100,8 @@ def in_thread(cw):
         cf, vf, testf
     )
 
+    dendogram_layers = spec[P.VISUALIZATION][P.DENDOGRAM_LAYERS]
+
     # Building network
     input_size = spec[P.INPUT][P.SIZE]
     mb_size = spec[P.MINIBATCH][P.SIZE]
@@ -118,11 +129,21 @@ def in_thread(cw):
     train_feed = {}
     test_feed = {}
 
-    for layer in spec[P.LAYERS]:
+    grab_vars = []
+    activations = []
+
+    for i, layer in enumerate(spec[P.LAYERS]):
         layer_gen = LAYER_TYPES[layer[P.get_name(P.KIND)]]
-        activation_fn, logits, prev_layer_size = layer_gen(
+        activation_fn, logits, prev_layer_size, grab = layer_gen(
             layer, init_w, train_feed, test_feed)(prev_layer_size, prev_layer)
+
+        if grab:
+            grab_vars.append(grab)
+
         prev_layer = activation_fn(logits)
+
+        if i in dendogram_layers:
+            activations.append(logits)
 
     output = prev_layer
 
@@ -145,7 +166,7 @@ def in_thread(cw):
 
         # Training
         for epoch, (xs, ys) in zip(range(mb_steps), minibatches):
-            testr, lr, lossr, _, _ = session.run([test, learning_rate, loss, train, inc_global_step], {
+            testr, outr, lr, lossr, _, _ = session.run([test, output, learning_rate, loss, train, inc_global_step], {
                 **train_feed,
                 minibatch_input: xs,
                 label: ys,
@@ -178,14 +199,118 @@ def in_thread(cw):
         print("Testing: {}%".format(testr * 100))
         print("Error rate: {}%".format((1-testr) * 100))
 
+        import code
+
         def y(x):
             return session.run(output, {
                 **test_feed,
                 minibatch_input: [x],
             })[0]
 
-        import code
-        code.InteractiveConsole(locals=dict(y=y)).interact()
+        # Mapping
+        map_size = spec[P.VISUALIZATION][P.SIZE]
+
+        if map_size >= 0:
+            xs, ys = zip(*islice(dataset.stream_shuffled_cases(), map_size))
+
+            grabr, acsr = session.run([grab_vars, activations], {
+                **test_feed,
+                minibatch_input: xs,
+                label: ys
+            })
+
+            post_training_analysis(cw, grabr, acsr)
+
+            code.InteractiveConsole(locals=dict(
+                y=y,
+                grabbed_vars=grabr,
+                activations=acsr,
+            )).interact()
+        else:
+            code.InteractiveConsole(locals=dict(
+                y=y,
+            )).interact()
+
+
+def post_training_analysis(cw, grabbed_vars, activations):
+    # mapping_box = cw.addViewBox(row=1, col=0)
+
+    # draw_rect(mapping_box, 0, 0, 0.2, 0.2, pen=pg.mkBrush('g'))
+    # draw_rect(mapping_box, 0, 0, 0.1, 0.1)
+
+    # Dendograms
+    for activation in activations:
+        labels = list(map(str, range(len(activation[0]))))
+
+        if len(labels) > 1:
+            dendrogram(np.transpose(activation), labels)
+
+    # Mapping
+    for grabbed_var in grabbed_vars:
+        for grab in grabbed_var:
+            hinton_plot(grab)
+
+
+# TODO: graphing oraganize and use pyqtgraph
+import scipy.cluster.hierarchy as sch
+import matplotlib.pyplot as plt
+
+
+def dendrogram(features, labels, metric='euclidean', mode='average', ax=None, title='Dendrogram', orient='top', lrot=90.0):
+    ax = ax if ax else plt.gca()
+    cluster_history = sch.linkage(features, method=mode, metric=metric)
+    sch.dendrogram(cluster_history, labels=labels,
+                   orientation=orient, leaf_rotation=lrot)
+    plt.tight_layout()
+    ax.set_title(title)
+    ax.set_ylabel(metric + ' distance')
+    plt.show()
+
+
+# This is Hinton's classic plot of a matrix (which may represent snapshots of weights or a time series of
+# activation values).  Each value is represented by a red (positive) or blue (negative) square whose size reflects
+# the absolute value.  This works best when maxsize is hardwired to 1.  The transpose (trans) arg defaults to
+# true so that matrices are plotted with rows along a horizontal plane, with the 0th row on top.
+
+# The 'colors' argument, a list, is ordered as follows: background, positive-value, negative-value, box-edge.
+# If you do not want to draw box edges, just use 'None' as the 4th color.  A gray-scale combination that
+# mirrors Hinton's original version is ['gray','white','black',None]
+def hinton_plot(matrix, maxval=None, maxsize=1, fig=None, trans=True, scale=True, title='Hinton plot',
+                colors=['gray', 'red', 'blue', 'white']):
+    hfig = fig if fig else plt.figure()
+    hfig.suptitle(title, fontsize=18)
+    if trans:
+        matrix = matrix.transpose()
+    if maxval == None:
+        maxval = np.abs(matrix).max()
+    if not maxsize:
+        maxsize = 2**np.ceil(np.log(maxval)/np.log(2))
+
+    axes = hfig.gca()
+    axes.clear()
+    # This is the background color.  Hinton uses gray
+    axes.patch.set_facecolor(colors[0])
+    # Options: ('equal'), ('equal','box'), ('auto'), ('auto','box')..see matplotlib docs
+    axes.set_aspect('auto', 'box')
+    axes.xaxis.set_major_locator(plt.NullLocator())
+    axes.yaxis.set_major_locator(plt.NullLocator())
+
+    ymax = (matrix.shape[1] - 1) * maxsize
+    for (x, y), val in np.ndenumerate(matrix):
+        # Hinton uses white = pos, black = neg
+        color = colors[1] if val > 0 else colors[2]
+        if scale:
+            size = max(0.01, np.sqrt(min(maxsize, maxsize*np.abs(val)/maxval)))
+        else:
+            # The original version did not include scaling
+            size = np.sqrt(min(np.abs(val), maxsize))
+        # (ymax - y) to invert: row 0 at TOP of diagram
+        bottom_left = [x - size / 2, (ymax - y) - size / 2]
+        blob = plt.Rectangle(bottom_left, size, size,
+                             facecolor=color, edgecolor=colors[3])
+        axes.add_patch(blob)
+    axes.autoscale_view()
+    plt.show()
 
 
 def ensure(this, err_msg, warning=False):

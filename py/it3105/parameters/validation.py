@@ -48,13 +48,8 @@ SCHEMA = Parameter.normalize({
         Parameter.STEPS: integer(),
     }),
     Parameter.VISUALIZATION: record({
-        Parameter.WEIGHTS: array(integer()),
-        Parameter.BIASSES: array(integer()),
-        Parameter.MAP: record({
-            Parameter.SIZE: integer(),
-            Parameter.LAYERS: array(integer()),
-            Parameter.DENDOGRAM_LAYERS: array(integer()),
-        }),
+        Parameter.SIZE: integer(),
+        Parameter.DENDOGRAM_LAYERS: array(integer()),
     })
 })
 

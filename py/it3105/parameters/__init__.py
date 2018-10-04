@@ -12,9 +12,10 @@ class NetworkParameters(Parameters):
         assert validator.validate(
             params), "Invalid parameters: {}".format(validator.errors)
 
-        params = NetworkParameters.transform(params, TRANSFORMATIONS)
+        transformed = NetworkParameters.transform(
+            validator.document, TRANSFORMATIONS)
 
-        super().__init__(NetworkParameters.recursively_dict_to_parameters(params))
+        super().__init__(NetworkParameters.recursively_dict_to_parameters(transformed))
 
     @staticmethod
     def transform(params, transformations):

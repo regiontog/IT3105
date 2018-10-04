@@ -38,3 +38,9 @@ class Dataset(ABC):
             (self.nth_case(n) for n in validations),
             (self.nth_case(n) for n in tests)
         )
+
+    def stream_shuffled_cases(self):
+        shuffled_cases = sample(range(self.size), self.size)
+
+        for n in cycle_reshuffle(shuffled_cases):
+            yield self.nth_case(n)
