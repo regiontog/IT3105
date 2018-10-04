@@ -256,7 +256,7 @@ def post_training_analysis(cw, grabbed_vars, activations):
     for activation in activations:
         hinton_plot(activation)
 
-     
+    
     """
     for grabbed_var in grabbed_vars:
         for grab in grabbed_var:

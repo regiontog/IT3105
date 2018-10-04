@@ -5,9 +5,7 @@ from ..cerberus import string, integer, record, decimal, boolean, optional
 
 import tensorflow as tf
 
-
 activation_map = {a.__name__: a for a in ACTIVATIONS}
-
 
 @param_schema({
     P.ACTIVATION: string(),
@@ -64,8 +62,25 @@ def dropout(parameters, init_w, training_feed_dict, test_feed_dict):
 
     return build_layer
 
+@param_schema(None)
+def convolution(parameters, init_w, training_feed_dict, test_feed_dict):
+    def build_layer(prev_size, prev_layer):
+        return lambda x: x, tf.nn.conv2d(prev_layer, strides=[1, 2, 2, 1], padding='SAME'), prev_size, []
+    return build_layer
+
+
+@param_schema({
+    P.ACTIVATION: string()
+})  
+def max_pool(parameters, init_w, training_feed_dict, test_feed_dict):
+    activation_fn = activation_map[parameters[P.get_name(P.ACTIVATION)]]()
+    def build_layer(prev_size, prev_layer):
+        return activation_fn, tf.nn.max_pool(prev_layer, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME'), prev_size, []
+    return build_layer
 
 LAYER_TYPES = {l.__name__: l for l in [
     regular_feedforward,
     dropout,
+    convolution,
+    max_pool
 ]}
