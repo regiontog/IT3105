@@ -210,7 +210,7 @@ def in_thread(cw):
         # Mapping
         map_size = spec[P.VISUALIZATION][P.SIZE]
 
-        if map_size >= 0:
+        if map_size > 0:
             xs, ys = zip(*islice(dataset.stream_shuffled_cases(), map_size))
 
             grabr, acsr = session.run([grab_vars, activations], {
