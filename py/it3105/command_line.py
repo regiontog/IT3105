@@ -132,7 +132,13 @@ def in_thread(cw):
     grab_vars = []
     activations = []
 
+    if 0 in dendogram_layers:
+        activations.append(minibatch_input)    
+
     for i, layer in enumerate(spec[P.LAYERS]):
+        #if i in dendogram_layers:
+        #    activations.append(logits)
+        
         layer_gen = LAYER_TYPES[layer[P.get_name(P.KIND)]]
         activation_fn, logits, prev_layer_size, grab = layer_gen(
             layer, init_w, train_feed, test_feed)(prev_layer_size, prev_layer)
@@ -211,7 +217,7 @@ def in_thread(cw):
         map_size = spec[P.VISUALIZATION][P.SIZE]
 
         if map_size > 0:
-            xs, ys = zip(*islice(dataset.stream_shuffled_cases(), map_size))
+            xs, ys = zip(*islice(dataset.stream_cases(), map_size))
 
             grabr, acsr = session.run([grab_vars, activations], {
                 **test_feed,
@@ -246,10 +252,16 @@ def post_training_analysis(cw, grabbed_vars, activations):
             dendrogram(np.transpose(activation), labels)
 
     # Mapping
+    
+    for activation in activations:
+        hinton_plot(activation)
+
+     
+    """
     for grabbed_var in grabbed_vars:
         for grab in grabbed_var:
             hinton_plot(grab)
-
+    """
 
 # TODO: graphing oraganize and use pyqtgraph
 import scipy.cluster.hierarchy as sch
